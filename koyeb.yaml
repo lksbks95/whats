@@ -1,52 +1,21 @@
 # Ficheiro de configuração para deploy no Koyeb
 
-# Define as variáveis de ambiente globais para a aplicação
-env:
-  - key: PORT
-    value: "8000"
-  - key: SECRET_KEY
-    value: "uma-chave-secreta-muito-segura-e-longa-para-producao"
-  - key: DATABASE_URL
-    scope: "system"
-
-# Define os serviços a serem executados
 services:
   - name: web
-    # Define o tipo de instância
     instance_type: free
-    
-    # Configuração do Git para encontrar o código
+    # Diz ao Koyeb para usar o nosso Dockerfile em vez de adivinhar
+    builder: dockerfile
     git:
       branch: main
       repository: "lksbks95/whats"
-      
-    # Comandos de Build: A receita para construir a sua aplicação
-    build_command: |
-      echo "--- A instalar dependências do Backend ---"
-      pip install -r backend/requirements.txt
-      echo "--- A instalar dependências do Frontend ---"
-      cd frontend
-      pnpm install
-      echo "--- A compilar o Frontend ---"
-      pnpm run build
-      echo "--- Build Concluído ---"
-      
-    # Comando de Run: Como iniciar o seu servidor em produção
-    # Inicia o Gunicorn a partir da pasta do backend na porta definida pela variável de ambiente
-    run_command: "gunicorn --chdir backend main:app --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:$PORT"
-    
-    # Configuração de Health Checks para o Koyeb saber se a app está saudável
-    health_checks:
-      - path: "/"
-        port: 8000
+    ports:
+      - port: 8000
         protocol: http
-        
-# Define as portas que a sua aplicação irá expor
-ports:
-  - port: 8000
-    protocol: http
-    
-# Define as rotas públicas
-routes:
-  - path: "/"
-    service: web
+    routes:
+      - path: "/"
+        service: web
+    env:
+      - key: SECRET_KEY
+        value: "uma-chave-secreta-muito-segura-e-longa-para-producao"
+      - key: DATABASE_URL
+        scope: "system"
