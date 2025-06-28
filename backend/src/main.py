@@ -16,11 +16,10 @@ from src.routes.department import department_bp
 from src.routes.whatsapp import whatsapp_bp
 from src.routes.conversation import conversation_bp
 from src.routes.file import file_bp
-from src.routes.department import department_bp
+# A importação duplicada de department_bp foi removida daqui.
 
 # --- Configuração de Caminhos ---
 # O WORKDIR e PYTHONPATH no Dockerfile já configuram isto corretamente.
-# Não precisamos mais de manipular o sys.path aqui.
 backend_src_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(backend_src_dir)
 project_root = os.path.dirname(backend_dir)
@@ -43,14 +42,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 db.init_app(app)
 limiter = Limiter(key_func=get_remote_address, app=app, default_limits=["200 per minute"])
 
-# --- Registro de Blueprints da API ---
+# --- Registro de Blueprints da API (Corrigido) ---
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(department_bp, url_prefix='/api')
 app.register_blueprint(whatsapp_bp, url_prefix='/api')
 app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
-app.register_blueprint(department_bp, url_prefix='/api')
+# O registo duplicado de department_bp foi removido daqui.
 
 # --- Rota para Servir o Frontend ---
 @app.route('/', defaults={'path': ''})
