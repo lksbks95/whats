@@ -16,6 +16,7 @@ from src.routes.department import department_bp
 from src.routes.whatsapp import whatsapp_bp
 from src.routes.conversation import conversation_bp
 from src.routes.file import file_bp
+from src.routes.dashboard import dashboard_bp
 # A importação duplicada de department_bp foi removida daqui.
 
 # --- Configuração de Caminhos ---
@@ -49,6 +50,7 @@ app.register_blueprint(department_bp, url_prefix='/api')
 app.register_blueprint(whatsapp_bp, url_prefix='/api')
 app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
+app.register_blueprint(dashboard_bp, url_prefix='/api')
 # O registo duplicado de department_bp foi removido daqui.
 
 # --- Rota para Servir o Frontend ---
