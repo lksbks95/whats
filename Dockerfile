@@ -2,7 +2,6 @@
 # Usamos uma imagem Node.js para compilar o nosso React
 FROM node:18 AS frontend-builder
 
-# Define o diretório de trabalho dentro do container
 WORKDIR /app
 
 # Copia os ficheiros de configuração do frontend primeiro para aproveitar o cache do Docker
@@ -19,7 +18,6 @@ RUN cd frontend && pnpm run build
 # Usamos uma imagem Python para o nosso backend Flask
 FROM python:3.10-slim
 
-# Define o diretório de trabalho para a raiz da aplicação
 WORKDIR /app
 
 # Copia as dependências do backend e instala-as
@@ -32,15 +30,18 @@ COPY backend/ ./backend/
 # Copia o frontend já compilado (a pasta 'dist') do estágio anterior
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# ***** CORREÇÃO FINAL AQUI *****
-# Define a pasta de trabalho final para o diretório 'src' do backend.
-# A partir daqui, os comandos são executados de dentro de /app/backend/src
-WORKDIR /app/backend/src
+# ***** A CORREÇÃO FINAL E MAIS IMPORTANTE *****
+# Define a variável de ambiente PYTHONPATH.
+# Isto diz ao Python para procurar módulos a partir da pasta /app/backend.
+# Assim, uma importação como 'from src.models' funcionará em qualquer ficheiro.
+ENV PYTHONPATH /app/backend
+
+# Define a pasta de trabalho final para o diretório do backend
+WORKDIR /app/backend
 
 # Expõe a porta que o Gunicorn irá usar
 EXPOSE 8000
 
-# Comando para iniciar o servidor. Como o WORKDIR agora é /app/backend/src,
-# o Gunicorn irá encontrar o 'main.py' diretamente, e os imports dentro dele
-# (ex: from models.user) funcionarão porque estão na mesma pasta.
-CMD ["gunicorn", "main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
+# Comando para iniciar o servidor.
+# O Gunicorn irá encontrar 'src.main:app' porque o PYTHONPATH está definido.
+CMD ["gunicorn", "src.main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
