@@ -23,8 +23,8 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copia as dependências do backend e instala-as
-COPY backend/requirements.txt ./backend/
-RUN pip install --no-cache-dir -r backend/requirements.txt
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia todo o código do backend para a pasta /app/backend
 COPY backend/ ./backend/
@@ -32,14 +32,15 @@ COPY backend/ ./backend/
 # Copia o frontend já compilado (a pasta 'dist') do estágio anterior
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Define a pasta de trabalho final para o diretório do backend.
-# A partir daqui, os comandos são executados dentro de /app/backend
-WORKDIR /app/backend
+# ***** CORREÇÃO FINAL AQUI *****
+# Define a pasta de trabalho final para o diretório 'src' do backend.
+# A partir daqui, os comandos são executados de dentro de /app/backend/src
+WORKDIR /app/backend/src
 
 # Expõe a porta que o Gunicorn irá usar
 EXPOSE 8000
 
-# ***** CORREÇÃO AQUI *****
-# Comando para iniciar o servidor, especificando o caminho do módulo a partir da pasta 'src'.
-# O Gunicorn irá procurar por um ficheiro 'main.py' dentro da pasta 'src' e usar a variável 'app'.
-CMD ["gunicorn", "src.main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
+# Comando para iniciar o servidor. Como o WORKDIR agora é /app/backend/src,
+# o Gunicorn irá encontrar o 'main.py' diretamente, e os imports dentro dele
+# (ex: from models.user) funcionarão porque estão na mesma pasta.
+CMD ["gunicorn", "main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
