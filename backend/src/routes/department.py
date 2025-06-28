@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify
 from src.models.user import Department
 from src.routes.auth import token_required
 
-department_bp = Blueprint('department', __name__)
+# ***** CORREÇÃO AQUI *****
+# O nome do blueprint foi alterado para ser único e evitar conflitos.
+department_bp = Blueprint('departments_api', __name__)
 
 @department_bp.route('/departments', methods=['GET'])
 @token_required
