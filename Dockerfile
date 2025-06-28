@@ -32,13 +32,14 @@ COPY backend/ ./backend/
 # Copia o frontend já compilado (a pasta 'dist') do estágio anterior
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# ***** CORREÇÃO AQUI *****
-# Define a pasta de trabalho final para o diretório do backend
+# Define a pasta de trabalho final para o diretório do backend.
+# A partir daqui, os comandos são executados dentro de /app/backend
 WORKDIR /app/backend
 
 # Expõe a porta que o Gunicorn irá usar
 EXPOSE 8000
 
-# Comando para iniciar o servidor. Como o WORKDIR agora é /app/backend,
-# o Gunicorn irá encontrar o 'main.py' diretamente.
-CMD ["gunicorn", "main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
+# ***** CORREÇÃO AQUI *****
+# Comando para iniciar o servidor, especificando o caminho do módulo a partir da pasta 'src'.
+# O Gunicorn irá procurar por um ficheiro 'main.py' dentro da pasta 'src' e usar a variável 'app'.
+CMD ["gunicorn", "src.main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
