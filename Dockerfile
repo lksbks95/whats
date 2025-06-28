@@ -13,6 +13,7 @@ RUN cd frontend && npm install -g pnpm && pnpm install
 COPY frontend/ ./frontend/
 
 # Executa o comando de build para compilar o React
+# Isto irá criar uma pasta /app/frontend/dist
 RUN cd frontend && pnpm run build
 
 # --- Estágio 2: Construir a Aplicação Final com Python ---
@@ -29,9 +30,10 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 # Copia o código do backend
 COPY backend/ ./backend/
 
-# Copia o frontend já compilado do estágio anterior
+# Copia o frontend já compilado (a pasta 'dist') do estágio anterior
 # Esta é a "ponte" entre o frontend e o backend
-COPY --from=frontend-builder /app/frontend/build ./frontend/build
+# ***** CORREÇÃO AQUI: Trocado 'build' por 'dist' *****
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Expõe a porta que o Gunicorn irá usar
 EXPOSE 8000
@@ -39,3 +41,4 @@ EXPOSE 8000
 # Comando para iniciar o servidor em produção
 # Inicia o Gunicorn a partir da pasta do backend
 CMD ["gunicorn", "--chdir", "backend", "main:app", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
+
