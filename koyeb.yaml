@@ -1,22 +1,18 @@
 # Ficheiro de configuração para deploy no Koyeb
-# Coloque este ficheiro na raiz do seu repositório (ex: /whats/koyeb.yaml)
 
-# Nome do serviço no Koyeb
-name: whatsapp-service
-
-# Define as variáveis de ambiente necessárias
+# Define as variáveis de ambiente globais para a aplicação
 env:
+  - key: PORT
+    value: "8000"
   - key: SECRET_KEY
-    # Crie uma chave segura e coloque aqui ou configure no painel do Koyeb
-    value: "uma-chave-super-secreta-e-longa-aqui"
+    value: "uma-chave-secreta-muito-segura-e-longa-para-producao"
   - key: DATABASE_URL
-    # Use a variável do PostgreSQL fornecida pelo Koyeb
     scope: "system"
-    
+
 # Define os serviços a serem executados
 services:
   - name: web
-    # Define o tipo de instância (o plano 'free' é gratuito)
+    # Define o tipo de instância
     instance_type: free
     
     # Configuração do Git para encontrar o código
@@ -28,19 +24,16 @@ services:
     build_command: |
       echo "--- A instalar dependências do Backend ---"
       pip install -r backend/requirements.txt
-      
       echo "--- A instalar dependências do Frontend ---"
       cd frontend
       pnpm install
-      
       echo "--- A compilar o Frontend ---"
       pnpm run build
-      
       echo "--- Build Concluído ---"
       
     # Comando de Run: Como iniciar o seu servidor em produção
-    # Inicia o Gunicorn a partir da pasta do backend
-    run_command: "gunicorn --chdir backend main:app --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1"
+    # Inicia o Gunicorn a partir da pasta do backend na porta definida pela variável de ambiente
+    run_command: "gunicorn --chdir backend main:app --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:$PORT"
     
     # Configuração de Health Checks para o Koyeb saber se a app está saudável
     health_checks:
