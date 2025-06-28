@@ -6,29 +6,29 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-# --- Configuração Robusta de Caminhos ---
-backend_dir = os.path.dirname(os.path.abspath(__file__))
+# --- Importações Corrigidas ---
+# Todas as importações agora são absolutas a partir da pasta 'src',
+# que é o padrão para o projeto.
+from src.models.user import db, User, Department
+from src.routes.auth import auth_bp
+from src.routes.user import user_bp
+from src.routes.department import department_bp
+from src.routes.whatsapp import whatsapp_bp
+from src.routes.conversation import conversation_bp
+from src.routes.file import file_bp
+
+# --- Configuração de Caminhos ---
+# O WORKDIR e PYTHONPATH no Dockerfile já configuram isto corretamente.
+# Não precisamos mais de manipular o sys.path aqui.
+backend_src_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(backend_src_dir)
 project_root = os.path.dirname(backend_dir)
-# ***** CORREÇÃO AQUI: Trocado 'build' por 'dist' *****
 frontend_folder = os.path.join(project_root, 'frontend', 'dist')
 
-# Adiciona o diretório 'src' do backend ao path
-sys.path.insert(0, os.path.join(backend_dir, 'src'))
-
-# Importa os componentes do seu projeto
-from models.user import db, User, Department
-from routes.auth import auth_bp
-from routes.user import user_bp
-from routes.department import department_bp
-from routes.whatsapp import whatsapp_bp
-from routes.conversation import conversation_bp
-from routes.file import file_bp
-
-# Se a pasta de build não existir, avisa no console
 if not os.path.exists(frontend_folder):
     print(f"AVISO: Pasta de build do frontend não encontrada em: {frontend_folder}")
 
-# Inicializa o Flask, instruindo-o a servir arquivos da pasta 'dist' do frontend
+# Inicializa o Flask
 app = Flask(__name__, static_folder=frontend_folder)
 
 # --- Configurações da Aplicação ---
@@ -50,7 +50,7 @@ app.register_blueprint(whatsapp_bp, url_prefix='/api')
 app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
 
-# --- Rota para Servir o Frontend (Single Page Application) ---
+# --- Rota para Servir o Frontend ---
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react_app(path):
