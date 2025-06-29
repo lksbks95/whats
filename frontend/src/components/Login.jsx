@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -32,12 +32,17 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          {/* Espaço para o logo da sua empresa */}
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <MessageSquare className="h-8 w-8 text-green-600" />
-            </div>
+            <img 
+              src="https://placehold.co/80x80/2563eb/ffffff?text=Logo" 
+              alt="Logo da Empresa" 
+              className="h-20 w-20 rounded-full"
+              onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/80x80/cccccc/ffffff?text=Err'; }}
+            />
           </div>
-          <CardTitle className="text-2xl font-bold">Sistema de Atendimento</CardTitle>
+          {/* Título personalizado */}
+          <CardTitle className="text-2xl font-bold">Sistema de Atendimento (Nome da Empresa)</CardTitle>
           <CardDescription>
             Faça login para acessar o painel de gerenciamento
           </CardDescription>
@@ -87,14 +92,9 @@ const Login = () => {
               )}
             </Button>
           </form>
+          
+          {/* A secção de contas de demonstração foi removida daqui */}
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold text-sm mb-2">Contas de demonstração:</h4>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Admin:</strong> admin / admin123</p>
-              <p><strong>Gerenciador:</strong> manager / manager123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -102,4 +102,3 @@ const Login = () => {
 };
 
 export default Login;
-
