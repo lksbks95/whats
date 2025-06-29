@@ -5,11 +5,11 @@ from flask_socketio import SocketIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-# --- Importação Simplificada ---
-# Importa a instância 'db' e todos os modelos a partir do __init__.py central.
-from src.models import db, User, Department, Conversation, Contact, ActivityLog
+# --- Importação Centralizada de Modelos ---
+# Garante que o SQLAlchemy conhece todas as tabelas antes de a aplicação arrancar.
+from src.models import db, User, Department, Conversation, Contact, ActivityLog, WhatsAppConnection
 
-# Importa todas as rotas
+# --- Importação de Todas as Rotas (Blueprints) ---
 from src.routes.auth import auth_bp
 from src.routes.user import user_bp
 from src.routes.department import department_bp
@@ -53,7 +53,7 @@ app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
 app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
-app.register_blueprint(contact_bp, url_prefix='/api')
+app.register_blueprint(contact_bp, url_prefix='/api') # <-- Linha que ativa a Agenda
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 
 # --- Rota para Servir o Frontend ---
@@ -73,7 +73,7 @@ def serve_react_app(path):
 
 # --- Contexto da Aplicação ---
 with app.app_context():
-    db.create_all() # Agora isto irá funcionar corretamente
+    db.create_all()
     if not User.query.filter_by(username='admin').first():
         admin_user = User(username='admin', name='Administrador', email='admin@example.com', role='admin', is_active=True)
         admin_user.set_password('admin123')
