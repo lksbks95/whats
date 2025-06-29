@@ -18,6 +18,7 @@ from src.routes.conversation import conversation_bp
 from src.routes.file import file_bp
 from src.routes.dashboard import dashboard_bp
 from src.routes.activity import activity_bp
+from src.routes.contact import contact_bp
 # A importação duplicada de department_bp foi removida daqui.
 
 # --- Configuração de Caminhos ---
@@ -53,6 +54,7 @@ app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
+app.register_blueprint(contact_bp, url_prefix='/api')
 # O registo duplicado de department_bp foi removido daqui.
 
 # --- Rota para Servir o Frontend ---
