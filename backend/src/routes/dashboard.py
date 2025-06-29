@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from src.models.user import db, User, Department
-# Assumindo que você tem um modelo Conversation
-from src.models.conversation import Conversation 
+# A linha abaixo foi comentada para evitar o erro de importação, pois o modelo ainda não existe.
+# from src.models.conversation import Conversation 
 from src.routes.auth import token_required
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -16,12 +16,13 @@ def get_dashboard_stats(current_user):
         total_users = User.query.count()
         total_departments = Department.query.count()
         
-        # Conta apenas as conversas com status 'open'
-        active_conversations = Conversation.query.filter_by(status='open').count()
+        # --- CORREÇÃO AQUI ---
+        # Temporariamente, usamos um valor fixo (0) para as conversas ativas
+        # para evitar o erro, até que o modelo 'Conversation' seja totalmente implementado.
+        active_conversations = 0 
         
-        # A lógica para transferências pendentes pode ser mais complexa,
-        # por enquanto, vamos usar um valor fixo como exemplo.
-        pending_transfers = 0 # Substitua pela sua lógica real
+        # A lógica para transferências pendentes também usará um valor fixo por agora.
+        pending_transfers = 0
 
         stats = {
             'totalUsers': total_users,
