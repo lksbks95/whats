@@ -1,20 +1,15 @@
 import os
-import sys
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-# --- CORREÇÃO: Importar todos os modelos PRIMEIRO ---
-# Isto garante que o SQLAlchemy conhece todas as tabelas e as suas relações
-# antes de qualquer outra parte da aplicação ser carregada.
-from src.models.user import db, User, Department
-from src.models.conversation import Conversation
-from src.models.contact import Contact
-from src.models.activity_log import ActivityLog
+# --- Importação Simplificada ---
+# Importa a instância 'db' e todos os modelos a partir do __init__.py central.
+from src.models import db, User, Department, Conversation, Contact, ActivityLog
 
-# --- Agora, importar as rotas (Blueprints) ---
+# Importa todas as rotas
 from src.routes.auth import auth_bp
 from src.routes.user import user_bp
 from src.routes.department import department_bp
@@ -24,6 +19,7 @@ from src.routes.file import file_bp
 from src.routes.profile import profile_bp
 from src.routes.activity import activity_bp
 from src.routes.contact import contact_bp
+from src.routes.dashboard import dashboard_bp
 
 # --- Configuração de Caminhos ---
 backend_src_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,15 +34,15 @@ if not os.path.exists(frontend_folder):
 app = Flask(__name__, static_folder=frontend_folder)
 
 # --- Configurações da Aplicação ---
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta-em-producao')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta')
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(backend_dir, 'dev.db')}")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- Inicialização de Extensões ---
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
-db.init_app(app)
-limiter = Limiter(key_func=get_remote_address, app=app, default_limits=["200 per minute"])
+db.init_app(app) # Associa a instância 'db' com a aplicação Flask
+limiter = Limiter(key_func=get_remote_address, app=app)
 
 # --- Registro de Blueprints da API ---
 app.register_blueprint(auth_bp, url_prefix='/api')
@@ -58,6 +54,7 @@ app.register_blueprint(file_bp, url_prefix='/api')
 app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(contact_bp, url_prefix='/api')
+app.register_blueprint(dashboard_bp, url_prefix='/api')
 
 # --- Rota para Servir o Frontend ---
 @app.route('/', defaults={'path': ''})
@@ -76,7 +73,7 @@ def serve_react_app(path):
 
 # --- Contexto da Aplicação ---
 with app.app_context():
-    db.create_all()
+    db.create_all() # Agora isto irá funcionar corretamente
     if not User.query.filter_by(username='admin').first():
         admin_user = User(username='admin', name='Administrador', email='admin@example.com', role='admin', is_active=True)
         admin_user.set_password('admin123')
@@ -86,5 +83,4 @@ with app.app_context():
 
 # --- Execução ---
 if __name__ == '__main__':
-    print("🚀 Iniciando servidor de desenvolvimento...")
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
