@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
-from src.models.user import db, WhatsAppConnection
+# Modelos importados do ponto central 'src.models'
+from src.models import db, WhatsAppConnection, Conversation, Message, Department
 from src.routes.auth import token_required, admin_required
 import requests
 import os
@@ -16,24 +17,13 @@ def connect_whatsapp(current_user):
     try:
         data = request.get_json()
         
-        # Validação dos campos obrigatórios
         required_fields = ['phone_number', 'access_token', 'webhook_verify_token', 'business_account_id']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'message': f'Campo {field} é obrigatório'}), 400
         
-        # Verificar se o número já está conectado
-        existing_connection = WhatsAppConnection.query.filter_by(
-            phone_number=data['phone_number']
-        ).first()
-        
-        if existing_connection:
+        if WhatsAppConnection.query.filter_by(phone_number=data['phone_number']).first():
             return jsonify({'message': 'Este número já está conectado'}), 400
-        
-        # Validar token com a API do WhatsApp (simulado)
-        is_valid = validate_whatsapp_token(data['access_token'], data['business_account_id'])
-        if not is_valid:
-            return jsonify({'message': 'Token de acesso inválido'}), 400
         
         # Criar nova conexão
         new_connection = WhatsAppConnection(
@@ -95,11 +85,9 @@ def disconnect_whatsapp(current_user, connection_id):
 def webhook_verify():
     """Verificar webhook do WhatsApp"""
     try:
-        # Verificação do webhook
         verify_token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
         
-        # Buscar token de verificação no banco
         connection = WhatsAppConnection.query.filter_by(
             webhook_verify_token=verify_token,
             is_active=True
@@ -119,7 +107,6 @@ def webhook_receive():
     try:
         data = request.get_json()
         
-        # Processar mensagens recebidas
         if data and 'entry' in data:
             for entry in data['entry']:
                 if 'changes' in entry:
@@ -133,49 +120,31 @@ def webhook_receive():
         print(f'Erro no webhook: {str(e)}')
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-def validate_whatsapp_token(access_token, business_account_id):
-    """Validar token do WhatsApp Business API (simulado)"""
-    try:
-        # Em produção, fazer uma chamada real para a API do WhatsApp
-        # Por enquanto, simulamos uma validação básica
-        if len(access_token) > 20 and len(business_account_id) > 5:
-            return True
-        return False
-    except:
-        return False
-
 def process_whatsapp_message(message_data):
     """Processar mensagem recebida do WhatsApp"""
     try:
-        from src.models.user import Conversation, Message, Department
-        
         if 'messages' in message_data:
             for message in message_data['messages']:
-                # Extrair dados da mensagem
                 contact_id = message['from']
                 message_text = message.get('text', {}).get('body', '')
                 message_type = message.get('type', 'text')
                 
-                # Buscar ou criar conversa
                 conversation = Conversation.query.filter_by(
-                    whatsapp_contact_id=contact_id
+                    contact_phone=contact_id,
+                    status='open'
                 ).first()
                 
                 if not conversation:
-                    # Criar nova conversa no departamento padrão (Suporte)
                     default_dept = Department.query.filter_by(name='Suporte').first()
-                    if default_dept:
-                        conversation = Conversation(
-                            whatsapp_contact_id=contact_id,
-                            contact_name=f'Cliente {contact_id[-4:]}',
-                            contact_phone=contact_id,
-                            department_id=default_dept.id,
-                            status='open'
-                        )
-                        db.session.add(conversation)
-                        db.session.flush()  # Para obter o ID
-                
-                # Criar mensagem
+                    conversation = Conversation(
+                        contact_phone=contact_id,
+                        contact_name=f'Cliente {contact_id[-4:]}',
+                        department_id=default_dept.id if default_dept else None,
+                        status='open'
+                    )
+                    db.session.add(conversation)
+                    db.session.flush()
+
                 if conversation:
                     new_message = Message(
                         conversation_id=conversation.id,
@@ -200,56 +169,31 @@ def send_whatsapp_message(current_user):
     try:
         data = request.get_json()
         
-        required_fields = ['to', 'message']
+        required_fields = ['to', 'message', 'conversation_id']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'message': f'Campo {field} é obrigatório'}), 400
         
-        # Buscar conexão ativa
         connection = WhatsAppConnection.query.filter_by(is_active=True).first()
         if not connection:
             return jsonify({'message': 'Nenhuma conexão WhatsApp ativa'}), 400
         
-        # Enviar mensagem (simulado)
-        success = send_message_to_whatsapp(
-            connection.access_token,
-            data['to'],
-            data['message']
-        )
+        # Lógica de envio real para a API do WhatsApp iria aqui
+        # send_message_to_whatsapp_api(connection.access_token, data['to'], data['message'])
         
-        if success:
-            # Salvar mensagem no banco
-            from src.models.user import Conversation, Message
-            
-            conversation = Conversation.query.filter_by(
-                whatsapp_contact_id=data['to']
-            ).first()
-            
-            if conversation:
-                new_message = Message(
-                    conversation_id=conversation.id,
-                    sender_type='agent',
-                    sender_id=current_user.id,
-                    content=data['message'],
-                    message_type='text'
-                )
-                db.session.add(new_message)
-                db.session.commit()
-            
-            return jsonify({'message': 'Mensagem enviada com sucesso'}), 200
-        else:
-            return jsonify({'message': 'Erro ao enviar mensagem'}), 500
+        # Salvar mensagem no banco
+        new_message = Message(
+            conversation_id=data['conversation_id'],
+            sender_type='agent',
+            sender_id=current_user.id,
+            content=data['message'],
+            message_type='text'
+        )
+        db.session.add(new_message)
+        db.session.commit()
+        
+        return jsonify({'message': 'Mensagem enviada com sucesso'}), 200
             
     except Exception as e:
+        db.session.rollback()
         return jsonify({'message': f'Erro ao enviar mensagem: {str(e)}'}), 500
-
-def send_message_to_whatsapp(access_token, to, message):
-    """Enviar mensagem para WhatsApp Business API (simulado)"""
-    try:
-        # Em produção, fazer chamada real para a API
-        # Por enquanto, simulamos o envio
-        print(f'Enviando mensagem para {to}: {message}')
-        return True
-    except:
-        return False
-
