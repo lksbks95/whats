@@ -30,7 +30,7 @@ if not os.path.exists(frontend_folder):
     print(f"AVISO: Pasta de build do frontend não encontrada em: {frontend_folder}")
 
 # Inicializa o Flask
-app = Flask(__name__, static_folder=None) # Desativamos o static_folder padrão
+app = Flask(__name__, static_folder=frontend_folder)
 
 # --- Configurações da Aplicação ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta')
@@ -55,23 +55,24 @@ app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 
-# --- Rotas para Servir o Frontend ---
-
-# Rota para servir os ficheiros estáticos (JS, CSS, imagens) da pasta 'assets'
-@app.route('/assets/<path:filename>')
-def serve_assets(filename):
-    return send_from_directory(os.path.join(frontend_folder, 'assets'), filename)
-
-# Rota "catch-all" para servir a aplicação React
+# --- Rota para Servir o Frontend (com Diagnóstico) ---
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def serve_react_app(path):
-    # Se o ficheiro existir na raiz da pasta 'dist' (ex: favicon.ico), serve-o
-    if os.path.exists(os.path.join(frontend_folder, path)):
-        return send_from_directory(frontend_folder, path)
-    # Caso contrário, serve o index.html para o React Router assumir
+def serve(path):
+    # --- LOGGING PARA DEPURAÇÃO ---
+    print(f"--- Rota SERVE acionada com o caminho: '{path}' ---")
+    
+    full_path = os.path.join(app.static_folder, path)
+    print(f"A verificar o caminho completo no servidor: '{full_path}'")
+
+    if path != "" and os.path.exists(full_path):
+        print(f"SUCESSO: Ficheiro encontrado em '{full_path}'. A servir o ficheiro.")
+        return send_from_directory(app.static_folder, path)
     else:
-        return send_from_directory(frontend_folder, 'index.html')
+        print(f"AVISO: O caminho '{full_path}' não foi encontrado ou é uma rota da SPA.")
+        index_path = os.path.join(app.static_folder, 'index.html')
+        print(f"A servir o ficheiro principal: '{index_path}'")
+        return send_from_directory(app.static_folder, 'index.html')
 
 # --- Contexto da Aplicação ---
 with app.app_context():
