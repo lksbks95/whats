@@ -9,7 +9,8 @@ import {
   Settings, 
   LogOut,
   Phone,
-  FileText
+  FileText,
+  BookUser // Ícone para a Agenda
 } from 'lucide-react';
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
@@ -17,10 +18,11 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: MessageSquare },
+    { id: 'contacts', label: 'Agenda', icon: BookUser }, // Nova opção de menu
+    { id: 'conversations', label: 'Conversas', icon: FileText },
     { id: 'users', label: 'Usuários', icon: Users, adminOnly: true },
     { id: 'departments', label: 'Departamentos', icon: Building2, adminOnly: true },
     { id: 'whatsapp', label: 'WhatsApp', icon: Phone, adminOnly: true },
-    { id: 'conversations', label: 'Conversas', icon: FileText },
     { id: 'settings', label: 'Configurações', icon: Settings }
   ];
 
@@ -35,9 +37,14 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <MessageSquare className="h-8 w-8 text-green-600 mr-3" />
+              <img 
+                src="https://placehold.co/40x40/2563eb/ffffff?text=Logo" 
+                alt="Logo da Empresa" 
+                className="h-10 w-10 mr-3 rounded-md"
+                onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/cccccc/ffffff?text=Err'; }}
+              />
               <h1 className="text-xl font-semibold text-gray-900">
-                Sistema de Atendimento WhatsApp
+                Sistema de Atendimento (Nome da Empresa)
               </h1>
             </div>
             
@@ -101,4 +108,3 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
 };
 
 export default Layout;
-
