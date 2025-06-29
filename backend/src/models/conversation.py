@@ -1,82 +1,30 @@
-from flask import Blueprint, request, jsonify
-# --- CORREÇÃO AQUI ---
-# Importa todos os modelos necessários a partir do ponto central 'src.models'
-from src.models import db, Conversation, Message, Transfer, Department, User
-from src.routes.auth import token_required
+from . import db
+from datetime import datetime
 
-conversation_bp = Blueprint('conversation', __name__)
+class Conversation(db.Model):
+    __tablename__ = 'conversations'
+    id = db.Column(db.Integer, primary_key=True)
+    contact_name = db.Column(db.String(150), nullable=False)
+    contact_phone = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), default='open', nullable=False) 
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    assigned_agent_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True)
 
-@conversation_bp.route('/conversations', methods=['GET'])
-@token_required
-def get_conversations(current_user):
-    """Retorna uma lista de conversas baseada na função do utilizador."""
-    try:
-        # Agentes só veem conversas atribuídas a eles ou ao seu departamento
-        if current_user.role == 'agent':
-            conversations = Conversation.query.filter(
-                (Conversation.assigned_agent_id == current_user.id) |
-                (Conversation.department_id == current_user.department_id)
-            ).order_by(Conversation.updated_at.desc()).all()
-        # Admins e Gerentes veem todas as conversas
-        else:
-            conversations = Conversation.query.order_by(Conversation.updated_at.desc()).all()
-            
-        return jsonify({'conversations': [c.to_dict() for c in conversations]}), 200
-    except Exception as e:
-        return jsonify({'message': f'Erro ao buscar conversas: {str(e)}'}), 500
-
-@conversation_bp.route('/conversations/<int:conv_id>', methods=['GET'])
-@token_required
-def get_conversation_details(current_user, conv_id):
-    """Retorna os detalhes e mensagens de uma conversa específica."""
-    try:
-        conversation = Conversation.query.get(conv_id)
-        if not conversation:
-            return jsonify({'message': 'Conversa não encontrada'}), 404
-        
-        # Verificação simples de autorização
-        if current_user.role == 'agent' and conversation.assigned_agent_id != current_user.id and conversation.department_id != current_user.department_id:
-             return jsonify({'message': 'Acesso não autorizado a esta conversa'}), 403
-
-        return jsonify({
-            'conversation': conversation.to_dict(),
-            'messages': [msg.to_dict() for msg in conversation.messages]
-        }), 200
-    except Exception as e:
-        return jsonify({'message': f'Erro ao buscar detalhes da conversa: {str(e)}'}), 500
-
-@conversation_bp.route('/conversations/<int:conv_id>/transfer', methods=['POST'])
-@token_required
-def transfer_conversation(current_user, conv_id):
-    """Transfere uma conversa para outro departamento ou agente."""
-    data = request.get_json()
-    to_department_id = data.get('to_department_id')
-    to_agent_id = data.get('to_agent_id') # Opcional
-
-    if not to_department_id:
-        return jsonify({'message': 'Departamento de destino é obrigatório'}), 400
-
-    try:
-        conversation = Conversation.query.get(conv_id)
-        if not conversation:
-            return jsonify({'message': 'Conversa não encontrada'}), 404
-
-        # Atualiza a atribuição da conversa
-        conversation.department_id = to_department_id
-        conversation.assigned_agent_id = to_agent_id if to_agent_id else None
-
-        # Regista a transferência no log
-        new_transfer = Transfer(
-            conversation_id=conv_id,
-            from_agent_id=current_user.id,
-            to_department_id=to_department_id,
-            to_agent_id=to_agent_id,
-            reason=data.get('reason')
-        )
-        db.session.add(new_transfer)
-        db.session.commit()
-
-        return jsonify({'message': 'Conversa transferida com sucesso'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'message': f'Erro ao transferir conversa: {str(e)}'}), 500
+    def to_dict(self):
+        # Acedemos aos relacionamentos a partir do objeto 'self'
+        assigned_agent = db.session.get(User, self.assigned_agent_id)
+        department = db.session.get(Department, self.department_id)
+        return {
+            'id': self.id,
+            'contact_name': self.contact_name,
+            'contact_phone': self.contact_phone,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() + 'Z',
+            'updated_at': self.updated_at.isoformat() + 'Z',
+            'assigned_agent_id': self.assigned_agent_id,
+            'assigned_agent_name': assigned_agent.name if assigned_agent else None,
+            'department_id': self.department_id,
+            'department_name': department.name if department else None,
+        }
