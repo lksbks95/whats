@@ -6,23 +6,26 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-# --- Importações Corrigidas ---
-# Todas as importações agora são absolutas a partir da pasta 'src',
-# que é o padrão para o projeto.
+# --- CORREÇÃO: Importar todos os modelos PRIMEIRO ---
+# Isto garante que o SQLAlchemy conhece todas as tabelas e as suas relações
+# antes de qualquer outra parte da aplicação ser carregada.
 from src.models.user import db, User, Department
+from src.models.conversation import Conversation
+from src.models.contact import Contact
+from src.models.activity_log import ActivityLog
+
+# --- Agora, importar as rotas (Blueprints) ---
 from src.routes.auth import auth_bp
 from src.routes.user import user_bp
 from src.routes.department import department_bp
 from src.routes.whatsapp import whatsapp_bp
 from src.routes.conversation import conversation_bp
 from src.routes.file import file_bp
-from src.routes.dashboard import dashboard_bp
+from src.routes.profile import profile_bp
 from src.routes.activity import activity_bp
 from src.routes.contact import contact_bp
-# A importação duplicada de department_bp foi removida daqui.
 
 # --- Configuração de Caminhos ---
-# O WORKDIR e PYTHONPATH no Dockerfile já configuram isto corretamente.
 backend_src_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(backend_src_dir)
 project_root = os.path.dirname(backend_dir)
@@ -45,17 +48,16 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 db.init_app(app)
 limiter = Limiter(key_func=get_remote_address, app=app, default_limits=["200 per minute"])
 
-# --- Registro de Blueprints da API (Corrigido) ---
+# --- Registro de Blueprints da API ---
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(department_bp, url_prefix='/api')
 app.register_blueprint(whatsapp_bp, url_prefix='/api')
 app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
-app.register_blueprint(dashboard_bp, url_prefix='/api')
+app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(contact_bp, url_prefix='/api')
-# O registo duplicado de department_bp foi removido daqui.
 
 # --- Rota para Servir o Frontend ---
 @app.route('/', defaults={'path': ''})
