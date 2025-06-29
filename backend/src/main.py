@@ -6,7 +6,6 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 # --- Importação Centralizada de Modelos ---
-# Garante que o SQLAlchemy conhece todas as tabelas antes de a aplicação arrancar.
 from src.models import db, User, Department, Conversation, Contact, ActivityLog, WhatsAppConnection, Message, Transfer
 
 # --- Importação de Todas as Rotas (Blueprints) ---
@@ -22,6 +21,7 @@ from src.routes.contact import contact_bp
 from src.routes.dashboard import dashboard_bp
 
 # --- Configuração de Caminhos ---
+# Assume que este ficheiro (main.py) está em /backend/src/
 backend_src_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(backend_src_dir)
 project_root = os.path.dirname(backend_dir)
@@ -30,8 +30,10 @@ frontend_folder = os.path.join(project_root, 'frontend', 'dist')
 if not os.path.exists(frontend_folder):
     print(f"AVISO: Pasta de build do frontend não encontrada em: {frontend_folder}")
 
-# Inicializa o Flask
-app = Flask(__name__, static_folder=frontend_folder)
+# --- Inicialização do Flask (com correção para servir ficheiros estáticos) ---
+# O static_url_path='' diz ao Flask para servir ficheiros como CSS e JS a partir da raiz.
+# Esta é a forma mais robusta de integrar com um frontend React/Vite.
+app = Flask(__name__, static_folder=frontend_folder, static_url_path='')
 
 # --- Configurações da Aplicação ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta')
@@ -41,7 +43,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # --- Inicialização de Extensões ---
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
-db.init_app(app) # Associa a instância 'db' com a aplicação Flask
+db.init_app(app)
 limiter = Limiter(key_func=get_remote_address, app=app)
 
 # --- Registro de Blueprints da API ---
@@ -53,23 +55,17 @@ app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
 app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
-app.register_blueprint(contact_bp, url_prefix='/api') # <-- Linha que ativa a Agenda
+app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 
 # --- Rota para Servir o Frontend ---
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_react_app(path):
-    if path.startswith("api/"):
-        return "Not Found", 404
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        index_path = os.path.join(app.static_folder, 'index.html')
-        if os.path.exists(index_path):
-            return send_from_directory(app.static_folder, 'index.html')
-        else:
-            return "Erro: index.html não encontrado.", 404
+# Esta rota agora atua como um "catch-all" APENAS para os casos em que
+# o ficheiro solicitado não foi encontrado na pasta estática (ex: /users, /dashboard).
+@app.errorhandler(404)
+def not_found(e):
+    # Para qualquer rota não encontrada (que não seja um ficheiro estático ou da API),
+    # servimos o index.html para que o React Router possa assumir.
+    return send_from_directory(app.static_folder, 'index.html')
 
 # --- Contexto da Aplicação ---
 with app.app_context():
