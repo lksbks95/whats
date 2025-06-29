@@ -1,4 +1,4 @@
-from .user import db
+from . import db # Alterado de 'from .user import db'
 from datetime import datetime
 
 class Conversation(db.Model):
@@ -8,16 +8,13 @@ class Conversation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     contact_name = db.Column(db.String(150), nullable=False)
     contact_phone = db.Column(db.String(20), nullable=False)
-    # Status pode ser 'open', 'closed', 'pending'
     status = db.Column(db.String(20), default='open', nullable=False) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Chaves Estrangeiras
     assigned_agent_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True)
 
-    # Relacionamentos para facilitar o acesso aos dados
     assigned_agent = db.relationship('User', backref='assigned_conversations')
     department = db.relationship('Department', backref='conversations')
 
