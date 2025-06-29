@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify
-from src.models.user import db
-from src.models.contact import Contact
-from src.models.conversation import Conversation # Precisamos disto para iniciar conversas
+from flask_cors import CORS
+# Importa os modelos necessários a partir do ponto central 'src.models'
+from src.models import db, Contact, Conversation, User
 from src.routes.auth import token_required
 
 contact_bp = Blueprint('contact', __name__)
+CORS(contact_bp)
 
-# Rota para obter todos os contatos
+# Rota para obter todos os contatos, ordenados por nome
 @contact_bp.route('/contacts', methods=['GET'])
 @token_required
 def get_contacts(current_user):
@@ -24,6 +25,7 @@ def create_contact(current_user):
     if not data or not data.get('name') or not data.get('phone_number'):
         return jsonify({'message': 'Nome e número de telefone são obrigatórios'}), 400
 
+    # Verifica se o número de telefone já existe para evitar duplicados
     if Contact.query.filter_by(phone_number=data['phone_number']).first():
         return jsonify({'message': 'Este número de telefone já existe na agenda'}), 409
 
