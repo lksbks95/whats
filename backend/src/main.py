@@ -29,9 +29,10 @@ frontend_folder = os.path.join(project_root, 'frontend', 'dist')
 if not os.path.exists(frontend_folder):
     print(f"AVISO: Pasta de build do frontend não encontrada em: {frontend_folder}")
 
-# --- Inicialização do Flask ---
-# O static_folder aponta para a pasta de build do frontend.
-app = Flask(__name__, static_folder=frontend_folder)
+# --- Inicialização do Flask (com correção para servir ficheiros estáticos) ---
+# O static_url_path='' diz ao Flask para servir ficheiros como CSS e JS a partir da raiz.
+# Esta é a forma mais robusta de integrar com um frontend React/Vite.
+app = Flask(__name__, static_folder=frontend_folder, static_url_path='')
 
 # --- Configurações da Aplicação ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta')
@@ -56,19 +57,14 @@ app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 
-# --- Rota para Servir o Frontend (Single Page Application) ---
-# Esta rota "catch-all" é a forma mais robusta de servir uma SPA com Flask.
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    # Se o caminho solicitado corresponder a um ficheiro existente na pasta estática (ex: /assets/index.css)
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        # Serve esse ficheiro diretamente.
-        return send_from_directory(app.static_folder, path)
-    else:
-        # Para qualquer outra rota (ex: /users, /dashboard), serve o index.html principal.
-        # Isto permite que o React Router assuma o controlo do roteamento no lado do cliente.
-        return send_from_directory(app.static_folder, 'index.html')
+# --- Rota para Servir o Frontend ---
+# Esta rota agora atua como um "catch-all" APENAS para os casos em que
+# o ficheiro solicitado não foi encontrado na pasta estática (ex: /users, /dashboard).
+@app.errorhandler(404)
+def not_found(e):
+    # Para qualquer rota não encontrada (que não seja um ficheiro estático ou da API),
+    # servimos o index.html para que o React Router possa assumir.
+    return send_from_directory(app.static_folder, 'index.html')
 
 # --- Contexto da Aplicação ---
 with app.app_context():
