@@ -7,7 +7,7 @@ from flask_limiter.util import get_remote_address
 
 # --- Importação Centralizada de Modelos ---
 # Garante que o SQLAlchemy conhece todas as tabelas antes de a aplicação arrancar.
-from src.models import db, User, Department, Conversation, Contact, ActivityLog, WhatsAppConnection
+from src.models import db, User, Department, Conversation, Contact, ActivityLog, WhatsAppConnection, Message
 
 # --- Importação de Todas as Rotas (Blueprints) ---
 from src.routes.auth import auth_bp
@@ -53,7 +53,7 @@ app.register_blueprint(conversation_bp, url_prefix='/api')
 app.register_blueprint(file_bp, url_prefix='/api')
 app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
-app.register_blueprint(contact_bp, url_prefix='/api') # <-- Linha que ativa a Agenda
+app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 
 # --- Rota para Servir o Frontend ---
