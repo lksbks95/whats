@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-// Importa todos os componentes de página que o seu sistema usa
-import Login from './pages/Login';
-import Layout from './pages/Layout';
-import Dashboard from './pages/Dashboard';
-import UserManagement from './pages/UserManagement';
-import DepartmentManagement from './pages/DepartmentManagement';
-import WhatsAppConfig from './pages/WhatsAppConfig';
-import ChatInterface from './pages/ChatInterface';
-import Settings from './pages/Settings';
-import ContactManagement from './pages/ContactManagement'; // A nossa nova página de Agenda
+// --- CORREÇÃO AQUI ---
+// Os caminhos de importação foram atualizados de './pages/' para './components/'
+// para corresponder à sua estrutura de ficheiros.
+import Login from './components/Login';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
+import UserManagement from './components/UserManagement';
+import DepartmentManagement from './components/DepartmentManagement';
+import WhatsAppConfig from './components/WhatsAppConfig';
+import ChatInterface from './components/ChatInterface';
+import Settings from './components/Settings';
+import ContactManagement from './components/ContactManagement';
 
 /**
  * Componente principal que gere a navegação e o estado.
@@ -35,7 +37,7 @@ function AppContent() {
         return <ChatInterface />;
       case 'settings':
         return <Settings />;
-      case 'contacts': // Adicionado o caso para a Agenda
+      case 'contacts':
         return <ContactManagement setActiveTab={setActiveTab} />;
       default:
         return <Dashboard />; // Se algo der errado, mostra o dashboard
