@@ -1,15 +1,12 @@
-# Ficheiro de configuração para deploy no Koyeb
-
 services:
   - name: web
     instance_type: free
-    # Diz ao Koyeb para usar o nosso Dockerfile em vez de adivinhar
     builder: dockerfile
     git:
       branch: main
       repository: "lksbks95/whats"
     ports:
-      - port: 8000
+      - port: 80
         protocol: http
     routes:
       - path: "/"
