@@ -29,8 +29,7 @@ frontend_folder = os.path.join(project_root, 'frontend', 'dist')
 if not os.path.exists(frontend_folder):
     print(f"AVISO: Pasta de build do frontend não encontrada em: {frontend_folder}")
 
-# --- Inicialização do Flask ---
-# O static_folder aponta para a pasta de build do frontend.
+# Inicializa o Flask
 app = Flask(__name__, static_folder=frontend_folder)
 
 # --- Configurações da Aplicação ---
@@ -56,23 +55,24 @@ app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 
-# --- Rota para Servir o Frontend (Single Page Application) ---
-# Esta rota "catch-all" é a forma mais robusta de servir uma SPA com Flask.
+# --- Rota para Servir o Frontend (com Diagnóstico) ---
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    # Se o caminho solicitado corresponder a um ficheiro existente na pasta estática (ex: /assets/index.css)
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        # Serve esse ficheiro diretamente.
+    # --- LOGGING PARA DEPURAÇÃO ---
+    print(f"--- Rota SERVE acionada com o caminho: '{path}' ---")
+    
+    full_path = os.path.join(app.static_folder, path)
+    print(f"A verificar o caminho completo no servidor: '{full_path}'")
+
+    if path != "" and os.path.exists(full_path):
+        print(f"SUCESSO: Ficheiro encontrado em '{full_path}'. A servir o ficheiro.")
         return send_from_directory(app.static_folder, path)
     else:
-        # Para qualquer outra rota (ex: /users, /dashboard), serve o index.html principal.
-        # Isto permite que o React Router assuma o controlo do roteamento no lado do cliente.
+        print(f"AVISO: O caminho '{full_path}' não foi encontrado ou é uma rota da SPA.")
         index_path = os.path.join(app.static_folder, 'index.html')
-        if os.path.exists(index_path):
-            return send_from_directory(app.static_folder, 'index.html')
-        else:
-            return "Erro: index.html não encontrado. Execute o build do frontend.", 404
+        print(f"A servir o ficheiro principal: '{index_path}'")
+        return send_from_directory(app.static_folder, 'index.html')
 
 # --- Contexto da Aplicação ---
 with app.app_context():
