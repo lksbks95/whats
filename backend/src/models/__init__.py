@@ -8,4 +8,5 @@ from .user import User, Department
 from .conversation import Conversation
 from .contact import Contact
 from .activity_log import ActivityLog
-from .whatsapp_connection import WhatsAppConnection # <--- ADICIONE ESTA LINHA
+from .whatsapp_connection import WhatsAppConnection
+from .message import Message # <--- ADICIONE ESTA LINHA
