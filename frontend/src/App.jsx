@@ -1,32 +1,27 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import UserManagement from './components/UserManagement';
-import DepartmentManagement from './components/DepartmentManagement';
-import ChatInterface from './components/ChatInterface';
-import WhatsAppConfig from './components/WhatsAppConfig';
-import { Loader2 } from 'lucide-react';
-import './App.css';
 
-const AppContent = () => {
-  const { user, loading, isAuthenticated } = useAuth();
+// Importa todos os componentes de página que o seu sistema usa
+import Login from './pages/Login';
+import Layout from './pages/Layout';
+import Dashboard from './pages/Dashboard';
+import UserManagement from './pages/UserManagement';
+import DepartmentManagement from './pages/DepartmentManagement';
+import WhatsAppConfig from './pages/WhatsAppConfig';
+import ChatInterface from './pages/ChatInterface';
+import Settings from './pages/Settings';
+import ContactManagement from './pages/ContactManagement'; // A nossa nova página de Agenda
+
+/**
+ * Componente principal que gere a navegação e o estado.
+ */
+function AppContent() {
+  const { user } = useAuth();
+  // O estado 'activeTab' controla qual página é mostrada. Começa no 'dashboard'.
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
-  const renderContent = () => {
+  // Função que decide qual componente renderizar com base no separador ativo.
+  const renderActiveComponent = () => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
@@ -39,31 +34,32 @@ const AppContent = () => {
       case 'conversations':
         return <ChatInterface />;
       case 'settings':
-        return (
-          <div className="text-center py-8">
-            <h3 className="text-lg font-semibold mb-2">Configurações</h3>
-            <p className="text-gray-600">Em desenvolvimento...</p>
-          </div>
-        );
+        return <Settings />;
+      case 'contacts': // Adicionado o caso para a Agenda
+        return <ContactManagement setActiveTab={setActiveTab} />;
       default:
-        return <Dashboard />;
+        return <Dashboard />; // Se algo der errado, mostra o dashboard
     }
   };
 
+  // Se não houver utilizador logado, mostra a página de Login.
+  if (!user) {
+    return <Login />;
+  }
+
+  // Se houver um utilizador, mostra o Layout principal com o conteúdo correto.
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-      {renderContent()}
+      {renderActiveComponent()}
     </Layout>
   );
-};
+}
 
-function App() {
+// O componente final que envolve toda a aplicação com o provedor de autenticação.
+export default function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
 }
-
-export default App;
-
