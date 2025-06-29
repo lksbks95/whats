@@ -1,4 +1,4 @@
-from . import db
+from . import db # Importa o 'db' do ficheiro __init__.py na mesma pasta
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -6,10 +6,10 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255))
+    password_hash = db.Column(db.String(128))
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='agent')
+    role = db.Column(db.String(20), nullable=False, default='agent') # admin, manager, agent
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True)
