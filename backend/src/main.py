@@ -41,7 +41,6 @@ from src.routes.dashboard import dashboard_bp
 
 # --- CORREÇÃO 3: CONFIGURAÇÃO CENTRALIZADA ---
 # O resto da configuração da aplicação é feito aqui, em uma única sequência lógica.
-# Isso substitui a função 'create_app'.
 
 # Configurações da aplicação a partir de variáveis de ambiente ou valores padrão
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta')
@@ -88,5 +87,4 @@ with app.app_context():
 
 # Bloco para execução direta (python main.py), útil para desenvolvimento local
 if __name__ == '__main__':
-    # O debug=True do socketio.run religa o servidor a cada alteração.
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
