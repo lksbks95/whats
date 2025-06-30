@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, MessageSquare, Loader2, BookUser } from 'lucide-react';
+import { IMaskInput } from 'react-imask';
+
 
 const ContactManagement = ({ setActiveTab }) => {
   const [contacts, setContacts] = useState([]);
