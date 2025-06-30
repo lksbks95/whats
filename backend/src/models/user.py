@@ -1,4 +1,4 @@
-from . import db # Importa o 'db' do ficheiro __init__.py na mesma pasta
+from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -6,10 +6,10 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(255))
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='agent') # admin, manager, agent
+    role = db.Column(db.String(20), nullable=False, default='agent')
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True)
@@ -36,7 +36,7 @@ class Department(db.Model):
     __tablename__ = 'departments'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    description = db.Column(db.String(255))
+    description = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     users = db.relationship('User', backref='department', lazy=True)
@@ -47,5 +47,6 @@ class Department(db.Model):
             'name': self.name,
             'description': self.description,
             'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() + 'Z'
+            'created_at': self.created_at.isoformat() + 'Z',
+            'user_count': len(self.users)
         }
