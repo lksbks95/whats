@@ -12,4 +12,5 @@ from .conversation import Conversation
 from .contact import Contact
 from .activity_log import ActivityLog
 from .whatsapp_connection import WhatsAppConnection
-from .message import message
+from .message import Message
+from .transfer import Transfer
