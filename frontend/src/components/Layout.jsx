@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext'; // --- PASSO 1: IMPORTAR O HOOK DE CONFIGURAÇÕES ---
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -15,6 +16,7 @@ import {
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
   const { user, logout } = useAuth();
+  const { settings } = useSettings(); // --- PASSO 2: USAR O HOOK PARA OBTER AS CONFIGURAÇÕES ---
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: MessageSquare },
@@ -37,14 +39,15 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              {/* --- PASSO 3: USAR DADOS DINÂMICOS --- */}
               <img 
-                src="https://placehold.co/40x40/2563eb/ffffff?text=Logo" 
+                src={settings.logo_url || "https://placehold.co/40x40/2563eb/ffffff?text=Logo"} 
                 alt="Logo da Empresa" 
                 className="h-10 w-10 mr-3 rounded-md"
                 onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/cccccc/ffffff?text=Err'; }}
               />
               <h1 className="text-xl font-semibold text-gray-900">
-                Sistema de Atendimento (Nome da Empresa)
+                {settings.company_name || "Sistema de Atendimento"}
               </h1>
             </div>
             
