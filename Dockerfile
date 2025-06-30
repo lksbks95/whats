@@ -33,4 +33,4 @@ EXPOSE 8000
 # --- O Comando Final e Único ---
 # Inicia o servidor Gunicorn diretamente.
 # Ele irá procurar pela variável 'socketio' no ficheiro 'src/main.py'.
-CMD ["gunicorn", "src.debug_runner:callable_app", "--chdir", "/app/backend", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "src.main:app", "--chdir", "/app/backend", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "-w", "1", "--bind", "0.0.0.0:8000"]
