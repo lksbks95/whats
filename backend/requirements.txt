@@ -35,3 +35,4 @@ wrapt==1.17.2
 wsproto==1.2.0
 gunicorn
 gevent-websocket
+psycopg2-binary
