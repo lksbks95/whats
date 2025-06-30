@@ -33,6 +33,8 @@ from src.routes.profile import profile_bp
 from src.routes.activity import activity_bp
 from src.routes.contact import contact_bp
 from src.routes.dashboard import dashboard_bp
+from src.routes.settings import settings_bp
+
 
 
 # --- CONFIGURAÇÃO CENTRALIZADA DA APLICAÇÃO ---
@@ -55,6 +57,8 @@ app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(activity_bp, url_prefix='/api')
 app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
+app.register_blueprint(settings_bp, url_prefix='/api')
+
 
 
 # --- ROTA PARA SERVIR A APLICAÇÃO REACT ---
