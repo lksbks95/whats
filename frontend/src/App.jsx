@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
+// --- CORREÇÃO DE ESTILOS ---
+// Adicione a importação para os seus arquivos de estilo.
+// Se você tiver um arquivo de estilos principal para este componente, importe-o aqui.
+import './App.css'; // <--- ADICIONE ESTA LINHA (ajuste o nome do ficheiro se for diferente)
+
 // --- CORREÇÃO AQUI ---
 // Os caminhos de importação foram atualizados de './pages/' para './components/'
 // para corresponder à sua estrutura de ficheiros.
