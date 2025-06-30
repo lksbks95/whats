@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 
 // --- CORREÇÃO DE ESTILOS ---
 // Adicione a importação para os seus arquivos de estilo.
@@ -18,6 +19,7 @@ import WhatsAppConfig from './components/WhatsAppConfig';
 import ChatInterface from './components/ChatInterface';
 import Settings from './components/Settings';
 import ContactManagement from './components/ContactManagement';
+
 
 /**
  * Componente principal que gere a navegação e o estado.
@@ -65,8 +67,11 @@ function AppContent() {
 // O componente final que envolve toda a aplicação com o provedor de autenticação.
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    // Envolva o AuthProvider com o SettingsProvider
+    <SettingsProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </SettingsProvider>
   );
 }
