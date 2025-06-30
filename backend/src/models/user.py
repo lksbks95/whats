@@ -21,6 +21,7 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
+        # Acedemos ao relacionamento 'department' através do backref do SQLAlchemy
         return {
             'id': self.id,
             'username': self.username,
