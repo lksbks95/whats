@@ -36,15 +36,17 @@ const Login = () => {
         <CardHeader className="text-center">
           {/* Espaço para o logo da sua empresa */}
           <div className="flex justify-center mb-4">
+            {/* --- ALTERAÇÃO AQUI --- */}
             <img 
-              src="https://placehold.co/80x80/2563eb/ffffff?text=Logo" 
+              src={settings.logo_url || "https://placehold.co/80x80/2563eb/ffffff?text=Logo"} 
               alt="Logo da Empresa" 
               className="h-20 w-20 rounded-full"
               onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/80x80/cccccc/ffffff?text=Err'; }}
             />
           </div>
           {/* Título personalizado */}
-          <CardTitle className="text-2xl font-bold">Sistema de Atendimento (Nome da Empresa)</CardTitle>
+          {/* --- ALTERAÇÃO AQUI --- */}
+          <CardTitle className="text-2xl font-bold">{settings.company_name || "Sistema de Atendimento"}</CardTitle>
           <CardDescription>
             Faça login para acessar o painel de gerenciamento
           </CardDescription>
@@ -95,8 +97,6 @@ const Login = () => {
             </Button>
           </form>
           
-          {/* A secção de contas de demonstração foi removida daqui */}
-
         </CardContent>
       </Card>
     </div>
