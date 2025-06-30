@@ -1,199 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, User, KeyRound, CheckCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
-  const { user, setUser } = useAuth();
+  // Busca as configurações atuais do contexto para exibir no formulário
+  const { settings, loading: settingsLoading } = useSettings();
+
+  // Cria estados para controlar os campos do formulário
+  const [companyName, setCompanyName] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+
+  // Cria estados para o processo de salvamento
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  // Este efeito é executado quando as configurações são carregadas do contexto,
+  // preenchendo o formulário com os valores atuais.
+  useEffect(() => {
+    if (settings) {
+      setCompanyName(settings.company_name || '');
+      setLogoUrl(settings.logo_url || '');
+    }
+  }, [settings]);
+
+  // Função chamada quando o formulário é enviado
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setMessage('');
+
+    try {
+      const updatedSettings = {
+        company_name: companyName,
+        logo_url: logoUrl,
+      };
+      
+      // Faz a chamada para a rota da API que criamos no Flask
+      await axios.post('/api/settings', updatedSettings);
+      
+      setMessage('Configurações salvas com sucesso!');
+      
+      // Opcional: Recarregar a página após 2 segundos para ver as mudanças em todo o site
+      setTimeout(() => window.location.reload(), 2000);
+
+    } catch (error) {
+      setMessage('Erro ao salvar as configurações. Tente novamente.');
+      console.error("Erro ao salvar configurações:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
   
-  // Estado para o formulário de perfil
-  const [name, setName] = useState(user?.name || '');
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
-
-  // Estado para o formulário de senha
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: ''
-  });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
-
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setProfileLoading(true);
-    setProfileError('');
-    setProfileSuccess('');
-
-    try {
-      const response = await axios.put('/api/profile/me', { name });
-      setUser(response.data.user); // Atualiza o utilizador no contexto global
-      setProfileSuccess('O seu nome foi atualizado com sucesso!');
-    } catch (error) {
-      setProfileError(error.response?.data?.message || 'Erro ao atualizar o perfil.');
-    } finally {
-      setProfileLoading(false);
-    }
-  };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    setPasswordLoading(true);
-    setPasswordError('');
-    setPasswordSuccess('');
-
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setPasswordError('As novas senhas não coincidem.');
-      setPasswordLoading(false);
-      return;
-    }
-
-    try {
-      await axios.put('/api/profile/me', {
-        current_password: passwordData.current_password,
-        new_password: passwordData.new_password
-      });
-      setPasswordSuccess('A sua senha foi alterada com sucesso!');
-      // Limpa os campos da senha
-      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-    } catch (error) {
-      setPasswordError(error.response?.data?.message || 'Erro ao alterar a senha.');
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
+  // Mostra uma mensagem de "Carregando..." enquanto as configurações iniciais não chegam
+  if (settingsLoading) {
+      return <div>Carregando...</div>;
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
-        <p className="text-muted-foreground">
-          Gerencie as suas informações de perfil e segurança.
-        </p>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações Gerais</CardTitle>
+        <CardDescription>
+          Altere as informações de personalização da sua empresa. As mudanças serão aplicadas em todo o sistema após salvar.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Nome da Empresa</Label>
+            <Input
+              id="companyName"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="O nome que aparecerá no cabeçalho"
+              disabled={isSaving}
+            />
+          </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Card de Perfil */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              Editar Perfil
-            </CardTitle>
-            <CardDescription>
-              Atualize o seu nome de exibição.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="bg-gray-100"
-                />
-              </div>
-              {profileError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{profileError}</AlertDescription>
-                </Alert>
-              )}
-              {profileSuccess && (
-                <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>{profileSuccess}</AlertDescription>
-                </Alert>
-              )}
-              <Button type="submit" disabled={profileLoading}>
-                {profileLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Alterações
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+          <div className="space-y-2">
+            <Label htmlFor="logoUrl">URL do Logo</Label>
+            <Input
+              id="logoUrl"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://... (link para uma imagem .jpg ou .png)"
+              disabled={isSaving}
+            />
+          </div>
 
-        {/* Card de Senha */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <KeyRound className="h-5 w-5 mr-2" />
-              Alterar Senha
-            </CardTitle>
-            <CardDescription>
-              Para a sua segurança, use uma senha forte.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current_password">Senha Atual</Label>
-                <Input
-                  id="current_password"
-                  type="password"
-                  value={passwordData.current_password}
-                  onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new_password">Nova Senha</Label>
-                <Input
-                  id="new_password"
-                  type="password"
-                  value={passwordData.new_password}
-                  onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm_password">Confirmar Nova Senha</Label>
-                <Input
-                  id="confirm_password"
-                  type="password"
-                  value={passwordData.confirm_password}
-                  onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
-                  required
-                />
-              </div>
-              {passwordError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{passwordError}</AlertDescription>
-                </Alert>
-              )}
-              {passwordSuccess && (
-                 <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>{passwordSuccess}</AlertDescription>
-                </Alert>
-              )}
-              <Button type="submit" disabled={passwordLoading}>
-                {passwordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Alterar Senha
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          <div className="flex items-center justify-between mt-4">
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Salvar Alterações
+            </Button>
+            
+            {message && <p className="text-sm text-green-600">{message}</p>}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
