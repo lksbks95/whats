@@ -25,7 +25,6 @@ echo ""
 
 
 # Inicia o servidor Gunicorn em primeiro plano.
-# O 'exec' substitui o processo do script pelo Gunicorn, o que é uma boa prática.
 exec gunicorn src.main:app \
     --chdir /app/backend \
     --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker \
