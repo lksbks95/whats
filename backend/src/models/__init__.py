@@ -11,3 +11,4 @@ from .transfer import Transfer
 from .contact import Contact
 from .activity_log import ActivityLog
 from .whatsapp_connection import WhatsAppConnection
+from .settings import Setting
