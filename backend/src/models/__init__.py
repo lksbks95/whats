@@ -11,4 +11,4 @@ from .user import User, Department
 from .conversation import Conversation
 from .contact import Contact
 from .activity_log import ActivityLog
-from .whatsapp_connection import whatsappconnection
+from .whatsapp_connection import WhatsAppConnection
