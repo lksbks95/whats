@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, MessageSquare, Loader2, BookUser } from 'lucide-react';
-import { IMaskInput } from 'react-imask';
-
+import { IMaskInput } from 'react-imask'; // --- 1. IMPORTAÇÃO DA BIBLIOTECA DE MÁSCARA ---
 
 const ContactManagement = ({ setActiveTab }) => {
   const [contacts, setContacts] = useState([]);
@@ -36,6 +35,7 @@ const ContactManagement = ({ setActiveTab }) => {
     e.preventDefault();
     setError('');
     try {
+      // O formData.phone_number já está sem a máscara, pronto para ser salvo
       await axios.post('/api/contacts', formData);
       fetchContacts();
       setIsDialogOpen(false);
@@ -48,8 +48,6 @@ const ContactManagement = ({ setActiveTab }) => {
   const handleStartConversation = async (contactId) => {
     try {
       const response = await axios.post(`/api/contacts/${contactId}/start_conversation`);
-      // Após iniciar a conversa, muda para a aba de conversas
-      // Esta é uma suposição, você pode querer lidar com a navegação de outra forma
       alert(response.data.message);
       if (setActiveTab) {
         setActiveTab('conversations');
@@ -82,10 +80,24 @@ const ContactManagement = ({ setActiveTab }) => {
                   <Label htmlFor="name">Nome</Label>
                   <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
                 </div>
+                
+                {/* --- 2. SUBSTITUIÇÃO DO INPUT DE TELEFONE --- */}
                 <div className="space-y-2">
                   <Label htmlFor="phone">Número de Telefone</Label>
-                  <Input id="phone" value={formData.phone_number} onChange={(e) => setFormData({...formData, phone_number: e.target.value})} placeholder="+5511999999999" required />
+                  <IMaskInput
+                    mask="+{55} (00) 00000-0000"
+                    radix="."
+                    value={formData.phone_number}
+                    unmask={true} // Salva apenas os números
+                    onAccept={(value, mask) => setFormData({...formData, phone_number: value})}
+                    placeholder="+55 (51) 99999-8888"
+                    id="phone"
+                    required
+                    // Estilos para se parecer com os outros inputs
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
                 </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="email">Email (Opcional)</Label>
                   <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
