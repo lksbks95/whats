@@ -20,7 +20,7 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(cors());
 
-const FLASK_BACKEND_URL = 'http://localhost:8000';
+const FLASK_BACKEND_URL = 'http://localhost:10000';
 
 console.log("Iniciando cliente do WhatsApp...");
 
