@@ -1,28 +1,29 @@
+# backend/src/main.py
+
 import os
+import subprocess
+import atexit
+import logging
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Configuração de logging
+logging.basicConfig(level=logging.INFO)
+
 # --- INICIALIZAÇÃO DE OBJETOS GLOBAIS ---
-# A aplicação Flask e a extensão SocketIO são criadas ANTES de tudo.
 backend_src_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(backend_src_dir)
 project_root = os.path.dirname(backend_dir)
-# A pasta 'dist' gerada pelo build do frontend é definida como a pasta de arquivos estáticos.
 frontend_folder = os.path.join(project_root, 'frontend', 'dist')
 
-# O 'static_url_path' vazio faz com que o Flask procure por arquivos a partir da raiz do site.
 app = Flask(__name__, static_folder=frontend_folder, static_url_path='')
-
-# Anexa o SocketIO ao 'app'.
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
 
-# Importa a instância 'db' e os modelos.
+# Importação dos modelos e rotas
 from src.models import db, User
-
-# --- IMPORTAÇÃO DE ROTAS (BLUEPRINTS) ---
 from src.routes.auth import auth_bp
 from src.routes.user import user_bp
 from src.routes.department import department_bp
@@ -35,11 +36,9 @@ from src.routes.contact import contact_bp
 from src.routes.dashboard import dashboard_bp
 from src.routes.settings import settings_bp
 
-
-
 # --- CONFIGURAÇÃO CENTRALIZADA DA APLICAÇÃO ---
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mude-esta-chave-secreta-em-producao')
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(backend_dir, 'dev.db')}")
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-forte-e-aleatoria')
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -59,35 +58,42 @@ app.register_blueprint(contact_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/api')
 app.register_blueprint(settings_bp, url_prefix='/api')
 
-
-
 # --- ROTA PARA SERVIR A APLICAÇÃO REACT ---
-# Esta rota "catch-all" garante que o React controle a navegação no frontend.
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    # Se o caminho solicitado existir na pasta de build do frontend (ex: /static/css/main.css),
-    # o Flask irá servi-lo automaticamente por causa da configuração 'static_folder'.
-    # Se não for um arquivo estático conhecido, servimos o 'index.html' principal.
-    # Isso permite que o React-Router lide com as rotas do lado do cliente (ex: /dashboard, /settings).
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, 'index.html')
+
+# --- LÓGICA PARA INICIAR O GATEWAY NODE.JS ---
+gateway_process = None
+
+def start_gateway():
+    global gateway_process
+    gateway_path = os.path.join(backend_dir, 'gateway', 'index.js')
+    if os.path.exists(gateway_path):
+        logging.info("Iniciando o Gateway de WhatsApp como um subprocesso...")
+        # Usamos Popen para iniciar o processo sem bloquear a aplicação Flask
+        gateway_process = subprocess.Popen(['node', gateway_path])
+        logging.info(f"Gateway iniciado com PID: {gateway_process.pid}")
     else:
-        return send_from_directory(app.static_folder, 'index.html')
+        logging.warning(f"Arquivo do gateway não encontrado em: {gateway_path}")
 
+def stop_gateway():
+    global gateway_process
+    if gateway_process:
+        logging.info("Finalizando o processo do Gateway...")
+        gateway_process.terminate()
+        gateway_process.wait()
+        logging.info("Processo do Gateway finalizado.")
 
-# --- COMANDOS FINAIS ---
+# Registra a função para ser chamada quando a aplicação Flask for encerrada
+atexit.register(stop_gateway)
+
+# Inicia o gateway apenas uma vez quando o módulo é carregado
+start_gateway()
+
+# Cria as tabelas do banco de dados (se necessário)
 with app.app_context():
     db.create_all()
-    if not User.query.filter_by(username='admin').first():
-        admin_user = User(username='admin', name='Administrador', email='admin@example.com', role='admin', is_active=True)
-        admin_user.set_password('admin123')
-        db.session.add(admin_user)
-        db.session.commit()
-        print("Usuário admin padrão criado.")
-
-# --- PONTO DE ENTRADA PARA DESENVOLVIMENTO LOCAL ---
-# Este bloco só será executado quando você rodar 'python src/main.py' diretamente.
-# O Gunicorn IGNORA este bloco.
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
