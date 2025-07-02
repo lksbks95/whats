@@ -1,85 +1,73 @@
+# backend/src/routes/conversation.py
+
 from flask import Blueprint, request, jsonify
-from flask_cors import CORS # <--- A importação que faltava foi adicionada aqui
-from src.models import db, Conversation, Message, Transfer, Department, User
+from src.models import db, Conversation, Message, User, Contact
 from src.routes.auth import token_required
+import os
+import requests # Importe a biblioteca de requisições
 
 conversation_bp = Blueprint('conversation', __name__)
-CORS(conversation_bp) # Esta linha agora irá funcionar
 
+# Rota para listar conversas (já estava correta)
 @conversation_bp.route('/conversations', methods=['GET'])
 @token_required
 def get_conversations(current_user):
-    """Retorna uma lista de conversas baseada na função do utilizador."""
-    try:
-        # Agentes só veem conversas atribuídas a eles ou ao seu departamento
-        if current_user.role == 'agent':
-            conversations = Conversation.query.filter(
-                (Conversation.assigned_agent_id == current_user.id) |
-                (Conversation.department_id == current_user.department_id)
-            ).order_by(Conversation.updated_at.desc()).all()
-        # Admins e Gerentes veem todas as conversas
-        else:
-            conversations = Conversation.query.order_by(Conversation.updated_at.desc()).all()
-            
-        return jsonify({'conversations': [c.to_dict() for c in conversations]}), 200
-    except Exception as e:
-        return jsonify({'message': f'Erro ao buscar conversas: {str(e)}'}), 500
+    # ... (seu código existente para listar conversas) ...
 
+# Rota para buscar detalhes de uma conversa (já estava correta)
 @conversation_bp.route('/conversations/<int:conv_id>', methods=['GET'])
 @token_required
 def get_conversation_details(current_user, conv_id):
-    """Retorna os detalhes e mensagens de uma conversa específica."""
-    try:
-        conversation = Conversation.query.get(conv_id)
-        if not conversation:
-            return jsonify({'message': 'Conversa não encontrada'}), 404
-        
-        # Verificação simples de autorização
-        if current_user.role == 'agent' and conversation.assigned_agent_id != current_user.id and conversation.department_id != current_user.department_id:
-             return jsonify({'message': 'Acesso não autorizado a esta conversa'}), 403
+    # ... (seu código existente para buscar detalhes) ...
 
-        # O SQLAlchemy irá carregar as mensagens automaticamente através do 'backref'
-        messages = sorted(conversation.messages, key=lambda m: m.timestamp)
-
-        return jsonify({
-            'conversation': conversation.to_dict(),
-            'messages': [msg.to_dict() for msg in messages]
-        }), 200
-    except Exception as e:
-        return jsonify({'message': f'Erro ao buscar detalhes da conversa: {str(e)}'}), 500
-
-@conversation_bp.route('/conversations/<int:conv_id>/transfer', methods=['POST'])
+# --- ROTA MODIFICADA/ADICIONADA PARA ENVIAR MENSAGENS ---
+@conversation_bp.route('/conversations/<int:conv_id>/messages', methods=['POST'])
 @token_required
-def transfer_conversation(current_user, conv_id):
-    """Transfere uma conversa para outro departamento ou agente."""
+def add_message_to_conversation(current_user, conv_id):
     data = request.get_json()
-    to_department_id = data.get('to_department_id')
-    to_agent_id = data.get('to_agent_id') # Opcional
+    content = data.get('content')
+    message_type = data.get('message_type', 'text')
+    file_path = data.get('file_path')
 
-    if not to_department_id:
-        return jsonify({'message': 'Departamento de destino é obrigatório'}), 400
+    if not content:
+        return jsonify({'message': 'O conteúdo da mensagem é obrigatório'}), 400
 
     try:
-        conversation = Conversation.query.get(conv_id)
-        if not conversation:
-            return jsonify({'message': 'Conversa não encontrada'}), 404
-
-        # Atualiza a atribuição da conversa
-        conversation.department_id = to_department_id
-        conversation.assigned_agent_id = to_agent_id if to_agent_id else None
-
-        # Regista a transferência no log
-        new_transfer = Transfer(
+        # 1. Salva a mensagem do agente no banco de dados primeiro
+        new_message = Message(
             conversation_id=conv_id,
-            from_agent_id=current_user.id,
-            to_department_id=to_department_id,
-            to_agent_id=to_agent_id,
-            reason=data.get('reason')
+            sender_id=current_user.id,
+            sender_type='agent',
+            content=content,
+            message_type=message_type,
+            file_path=file_path
         )
-        db.session.add(new_transfer)
+        db.session.add(new_message)
         db.session.commit()
 
-        return jsonify({'message': 'Conversa transferida com sucesso'}), 200
+        # 2. Pega o telefone do contato para enviar a mensagem
+        conversation = Conversation.query.get(conv_id)
+        if not conversation or not conversation.contact:
+            raise Exception("Conversa ou contato não encontrado")
+        
+        contact_phone = conversation.contact.phone_number
+
+        # 3. Manda a mensagem de texto para o Gateway Node.js
+        if message_type == 'text':
+            gateway_url = "http://localhost:3001/send-message"
+            payload = {"to": contact_phone, "text": content}
+            
+            # Envia a requisição para o Gateway
+            response = requests.post(gateway_url, json=payload)
+            response.raise_for_status() # Lança um erro se a resposta não for 2xx
+
+        # (Aqui você pode adicionar a lógica para enviar arquivos também, se necessário)
+
+        return jsonify({'message': 'Mensagem enviada com sucesso', 'data': new_message.to_dict()}), 201
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({'message': f'Erro ao transferir conversa: {str(e)}'}), 500
+        print(f"ERRO ao enviar mensagem: {e}")
+        return jsonify({'message': f'Erro ao enviar mensagem: {str(e)}'}), 500
+
+# ... (sua rota de transferência pode continuar aqui) ...
