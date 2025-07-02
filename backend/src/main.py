@@ -4,6 +4,8 @@ import os
 import subprocess
 import atexit
 import logging
+import socket
+from urllib.parse import urlparse
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -40,6 +42,44 @@ from src.routes.settings import settings_bp
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-forte-e-aleatoria')
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+# ==============================================================================
+# --- CÓDIGO DE DEPURAÇÃO DE CONECTIVIDADE ---
+# ==============================================================================
+print("--- INICIANDO TESTE DE CONEXÃO DE REDE ---", flush=True)
+database_url_from_env = os.environ.get("SQLALCHEMY_DATABASE_URI")
+
+if not database_url_from_env:
+    print("ERRO DE DEBUG: Variável de ambiente SQLALCHEMY_DATABASE_URI não foi encontrada.", flush=True)
+else:
+    print(f"DEBUG: URL do banco encontrada: {database_url_from_env}", flush=True)
+    try:
+        # Extrai o hostname e a porta da URL
+        parsed_url = urlparse(database_url_from_env)
+        db_host = parsed_url.hostname
+        db_port = parsed_url.port
+        print(f"DEBUG: Tentando conectar ao Host: {db_host} na Porta: {db_port}", flush=True)
+
+        # Tenta criar uma conexão de socket de baixo nível
+        socket.setdefaulttimeout(10)  # Timeout de 10 segundos
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex((db_host, db_port))
+        
+        if result == 0:
+            print(">>> SUCESSO: A porta está aberta. A conexão de rede com o banco de dados é POSSÍVEL.", flush=True)
+        else:
+            print(f">>> FALHA: A porta NÃO está aberta. Código de erro do socket: {result}. A conexão de rede FALHOU.", flush=True)
+        sock.close()
+
+    except Exception as e:
+        print(f"ERRO DE DEBUG: Ocorreu uma exceção durante o teste de conexão: {e}", flush=True)
+
+print("--- FIM DO TESTE DE CONEXÃO DE REDE ---", flush=True)
+# ==============================================================================
+# Fim do código de depuração
+# ==============================================================================
+
 
 db.init_app(app)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
