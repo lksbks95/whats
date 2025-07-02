@@ -9,4 +9,5 @@ sleep 5
 
 # Inicia o servidor Gunicorn do Flask em primeiro plano
 echo "Iniciando o servidor principal Gunicorn..."
-exec gunicorn src.main:app --chdir /app/backend --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:8000
+# --- ALTERAÇÃO AQUI: Usa a variável $PORT fornecida pela Render ---
+exec gunicorn src.main:app --chdir /app/backend --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 --bind 0.0.0.0:$PORT
