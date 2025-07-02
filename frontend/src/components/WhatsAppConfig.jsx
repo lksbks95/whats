@@ -1,101 +1,107 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useSettings } from '../contexts/SettingsContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { io } from 'socket.io-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { QRCode } from 'qrcode.react'; // Importa o componente para renderizar o QR Code
+import { CheckCircle, XCircle, Loader2, QrCode } from 'lucide-react';
+
+// A URL do seu gateway. Em produção, a Render irá expor as duas portas no mesmo domínio.
+// Em desenvolvimento local, você precisaria usar 'http://localhost:3001'.
+const GATEWAY_URL = window.location.origin;
 
 const WhatsAppConfig = () => {
-  const { settings, loading: settingsLoading } = useSettings();
+    const [status, setStatus] = useState('connecting');
+    const [qrCode, setQrCode] = useState('');
 
-  // Estados para os campos específicos do WhatsApp
-  const [phoneNumberId, setPhoneNumberId] = useState('');
-  const [wabaId, setWabaId] = useState('');
-  const [accessToken, setAccessToken] = useState('');
-  const [verifyToken, setVerifyToken] = useState('');
+    useEffect(() => {
+        // Conecta ao servidor Socket.IO do gateway
+        const socket = io(GATEWAY_URL, {
+            // Garante que o socket tente se conectar ao caminho correto na Render
+            path: '/socket.io'
+        });
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState('');
+        socket.on('connect', () => {
+            console.log('Conectado ao Gateway de WhatsApp');
+        });
+        
+        socket.on('connect_error', (err) => {
+            console.error('Erro de conexão com o Socket.IO:', err.message);
+            setStatus('disconnected');
+        });
 
-  // Preenche o formulário com os dados atuais quando o componente carrega
-  useEffect(() => {
-    if (settings) {
-      setPhoneNumberId(settings.whatsapp_phone_number_id || '');
-      setWabaId(settings.whatsapp_waba_id || '');
-      setAccessToken(settings.whatsapp_access_token || '');
-      setVerifyToken(settings.whatsapp_verify_token || '');
-    }
-  }, [settings]);
+        // Ouve o evento que envia o status da conexão
+        socket.on('connection_status', (newStatus) => {
+            console.log('Novo status recebido:', newStatus);
+            setStatus(newStatus || 'disconnected');
+            if (newStatus !== 'qr_code_generated') {
+                setQrCode(''); // Limpa o QR code se o status mudar
+            }
+        });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setMessage('');
+        // Ouve o evento que envia o QR Code
+        socket.on('qr_code', (qr) => {
+            console.log('QR Code recebido');
+            setQrCode(qr);
+        });
 
-    try {
-      const whatsappSettings = {
-        whatsapp_phone_number_id: phoneNumberId,
-        whatsapp_waba_id: wabaId,
-        whatsapp_access_token: accessToken,
-        whatsapp_verify_token: verifyToken, // Usado para a verificação do webhook
-      };
-      
-      // A chamada é para a mesma API, mas enviando apenas as chaves do WhatsApp
-      await axios.post('/api/settings', whatsappSettings);
-      
-      setMessage('Configurações do WhatsApp salvas com sucesso!');
+        // Limpa a conexão quando o componente é desmontado
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
 
-    } catch (error) {
-      setMessage('Erro ao salvar as configurações.');
-      console.error("Erro ao salvar:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
-  if (settingsLoading) {
-    return <div>Carregando...</div>;
-  }
+    const renderStatus = () => {
+        switch (status) {
+            case 'ready':
+                return (
+                    <div className="flex flex-col items-center text-center text-green-600">
+                        <CheckCircle className="h-16 w-16 mb-4" />
+                        <h3 className="text-xl font-semibold">Conectado</h3>
+                        <p className="text-sm text-gray-500">A sua sessão do WhatsApp está ativa.</p>
+                    </div>
+                );
+            case 'qr_code_generated':
+                return (
+                    <div className="flex flex-col items-center text-center">
+                        <QrCode className="h-12 w-12 mb-4 text-blue-600" />
+                        <h3 className="text-xl font-semibold">Escaneie para Conectar</h3>
+                        <p className="text-sm text-gray-500 mb-4">Abra o WhatsApp no seu celular e escaneie o código abaixo.</p>
+                        {qrCode && <QRCode value={qrCode} size={256} bgColor="#ffffff" fgColor="#000000" />}
+                    </div>
+                );
+            case 'disconnected':
+                return (
+                     <div className="flex flex-col items-center text-center text-red-600">
+                        <XCircle className="h-16 w-16 mb-4" />
+                        <h3 className="text-xl font-semibold">Desconectado</h3>
+                        <p className="text-sm text-gray-500">O serviço está a tentar reconectar. Verifique os logs do servidor se o problema persistir.</p>
+                    </div>
+                );
+            default:
+                return (
+                    <div className="flex flex-col items-center text-center text-gray-600">
+                        <Loader2 className="h-16 w-16 mb-4 animate-spin" />
+                        <h3 className="text-xl font-semibold">A conectar ao Gateway...</h3>
+                        <p className="text-sm text-gray-500">A aguardar o status do serviço de WhatsApp.</p>
+                    </div>
+                );
+        }
+    };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Configuração da API do WhatsApp</CardTitle>
-        <CardDescription>
-          Insira aqui as credenciais obtidas no painel da Meta for Developers.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumberId">ID do Número de Telefone</Label>
-            <Input id="phoneNumberId" value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="wabaId">ID da Conta do WhatsApp Business (WABA)</Label>
-            <Input id="wabaId" value={wabaId} onChange={(e) => setWabaId(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accessToken">Token de Acesso Permanente</Label>
-            <Input id="accessToken" type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="verifyToken">Token de Verificação do Webhook</Label>
-            <Input id="verifyToken" value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} placeholder="Crie uma senha secreta aqui" />
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Salvar Credenciais
-            </Button>
-            {message && <p className="text-sm text-green-600">{message}</p>}
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  );
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Conexão com o WhatsApp</CardTitle>
+                <CardDescription>
+                    Monitore o status da sua conexão com o WhatsApp e escaneie o QR Code quando necessário.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center p-8 border-2 border-dashed rounded-lg min-h-[350px]">
+                    {renderStatus()}
+                </div>
+            </CardContent>
+        </Card>
+    );
 };
 
 export default WhatsAppConfig;
