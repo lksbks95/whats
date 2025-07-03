@@ -43,7 +43,37 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-forte
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
 # O código de depuração de rede foi removido daqui.
+
+# --- CÓDIGO DE DEPURAÇÃO DE CONECTIVIDADE ---
+print("--- INICIANDO TESTE DE CONEXÃO DE REDE ---", flush=True)
+database_url = os.environ.get("SQLALCHEMY_DATABASE_URI")
+
+if not database_url:
+    print(">>> ERRO: Variável de ambiente SQLALCHEMY_DATABASE_URI não encontrada.", flush=True)
+else:
+    try:
+        parsed_url = urlparse(database_url)
+        db_host = parsed_url.hostname
+        db_port = parsed_url.port
+        print(f"--- DEBUG: Tentando conectar ao Host: {db_host} na Porta: {db_port}", flush=True)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(10) # Timeout de 10 segundos
+        result = sock.connect_ex((db_host, db_port))
+
+        if result == 0:
+            print(">>> SUCESSO: A conexão de rede foi possível. A porta está aberta.", flush=True)
+        else:
+            print(f">>> FALHA: A conexão de rede falhou. Código de erro do socket: {result}", flush=True)
+        sock.close()
+    except Exception as e:
+        print(f">>> ERRO: Uma exceção ocorreu durante o teste: {e}", flush=True)
+
+print("--- FIM DO TESTE DE CONEXÃO DE REDE ---", flush=True)
+# --- FIM DO CÓDIGO DE DEPURAÇÃO ---
+
 
 db.init_app(app)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
