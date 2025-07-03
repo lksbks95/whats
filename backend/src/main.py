@@ -1,11 +1,9 @@
 # backend/src/main.py
 
 import os
-# Removido: import subprocess
-# Removido: import atexit
 import logging
-# Removido: import socket
-# Removido: from urllib.parse import urlparse
+import socket
+from urllib.parse import urlparse
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -43,10 +41,9 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uma-chave-secreta-forte
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-
-# O código de depuração de rede foi removido daqui.
-
+# ==============================================================================
 # --- CÓDIGO DE DEPURAÇÃO DE CONECTIVIDADE ---
+# ==============================================================================
 print("--- INICIANDO TESTE DE CONEXÃO DE REDE ---", flush=True)
 database_url = os.environ.get("SQLALCHEMY_DATABASE_URI")
 
@@ -72,8 +69,9 @@ else:
         print(f">>> ERRO: Uma exceção ocorreu durante o teste: {e}", flush=True)
 
 print("--- FIM DO TESTE DE CONEXÃO DE REDE ---", flush=True)
-# --- FIM DO CÓDIGO DE DEPURAÇÃO ---
-
+# ==============================================================================
+# Fim do código de depuração
+# ==============================================================================
 
 db.init_app(app)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -101,8 +99,6 @@ def serve(path):
     return send_from_directory(app.static_folder, 'index.html')
 
 # --- LÓGICA DO GATEWAY NODE.JS DESATIVADA ---
-# As funções start_gateway, stop_gateway e o registro do atexit foram removidos.
-# A chamada start_gateway() também foi removida.
 
 # Cria as tabelas do banco de dados (se necessário)
 with app.app_context():
