@@ -1,9 +1,8 @@
+@import "tw-animate-css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* A importação de tw-animate-css pode permanecer se for um arquivo CSS válido */
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -119,10 +118,9 @@
     @apply border-[var(--color-border)];
   }
   body {
-  @apply bg-[var(--color-background)] text-[var(--color-foreground)];
+    @apply bg-[var(--color-background)] text-[var(--color-foreground)];
   }
   *:focus-visible {
-  @apply ring-2 ring-offset-2 ring-offset-[var(--color-background)] ring-[var(--color-ring)];
+    @apply ring-2 ring-offset-2 ring-offset-[var(--color-background)] ring-[var(--color-ring)];
   }
 }
-
