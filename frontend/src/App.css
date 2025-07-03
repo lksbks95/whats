@@ -116,10 +116,13 @@
 
 @layer base {
   * {
-    @apply border-[var(--color-border)] outline-ring/50;
+    @apply border-[var(--color-border)];
   }
   body {
     @apply bg-background text-foreground;
+  }
+  *:focus-visible {
+    @apply ring-2 ring-offset-2 ring-offset-background ring-[var(--color-ring)];
   }
 }
 
