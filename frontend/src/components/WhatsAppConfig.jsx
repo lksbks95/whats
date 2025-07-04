@@ -65,7 +65,7 @@ const WhatsAppConfig = () => {
                         <QrCode className="h-12 w-12 mb-4 text-blue-600" />
                         <h3 className="text-xl font-semibold">Escaneie para Conectar</h3>
                         <p className="text-sm text-gray-500 mb-4">Abra o WhatsApp no seu celular e escaneie o código abaixo.</p>
-                        {qrCode && <QRCode value={qrCode} size={256} bgColor="#ffffff" fgColor="#000000" />}
+                        {qrCode && <QRCodeCanvas value={qrCode} size={256} bgColor="#ffffff" fgColor="#000000" />}
                     </div>
                 );
             case 'disconnected':
