@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import QRCode from 'qrcode.react'; // <-- CORREÇÃO AQUI
+import { QRCodeCanvas } from 'qrcode.react';
 import { CheckCircle, XCircle, Loader2, QrCode } from 'lucide-react';
 
 // A URL do seu gateway. Em produção, a Render irá expor as duas portas no mesmo domínio.
